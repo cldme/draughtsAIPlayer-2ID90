@@ -20,6 +20,20 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
     
     /** boolean that indicates that the GUI asked the player to stop thinking. */
     private boolean stopped;
+    
+    // Custom variables for our draughts player
+    private int kingValue = 10;
+    private int[] POSITION_MATRIX = {0, 
+        9, 9, 9, 9, 9, 
+        9, 8, 8, 8, 8, 
+        7, 7, 7, 7, 8, 
+        7, 6, 6, 6, 6, 
+        5, 5, 5, 5, 6, 
+        5, 4, 4, 4, 4, 
+        3, 3, 3, 3, 4, 
+        3, 2, 2, 2, 2, 
+        1, 1, 1, 1, 2, 
+        3, 3, 3, 3, 3};
 
     public MyDraughtsPlayer(int maxSearchDepth) {
         super("best.png"); // ToDo: replace with your own icon
@@ -116,10 +130,35 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
         if (stopped) { stopped = false; throw new AIStoppedException(); }
         DraughtsState state = node.getState();
         // ToDo: write an alphabeta search to compute bestMove and value
+        
+        // Checking whether depth limit is reached
+        if (depth <= 0) {
+            return evaluate(state);
+        }
+        
         Move bestMove = state.getMoves().get(0);
         int value = 0;
+        List<Move> moves = state.getMoves();
+        for (Move m : moves) {
+            state.doMove(m);
+            
+            DraughtsNode newNode = new DraughtsNode(state);
+            //beta = Math.min(beta, alphaBeta(newNode, alpha, beta, depth - 1));
+            value = alphaBeta(newNode, alpha, beta, depth - 1);
+            if (beta > value) {
+                beta = value;
+                bestMove = m;
+            }
+            if (beta <= alpha) {
+                state.undoMove(m);
+                return alpha;
+            }
+            beta = Math.min(beta, value);
+            
+            state.undoMove(m);
+        }
         node.setBestMove(bestMove);
-        return value;
+        return beta;
      }
     
     int alphaBetaMax(DraughtsNode node, int alpha, int beta, int depth)
@@ -127,48 +166,70 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
         if (stopped) { stopped = false; throw new AIStoppedException(); }
         DraughtsState state = node.getState();
         // ToDo: write an alphabeta search to compute bestMove and value
+        
+        // Checking whether depth limit is reached
+        if (depth <= 0) {
+            return evaluate(state);
+        }
+        
         Move bestMove = state.getMoves().get(0);
         int value = 0;
+        List<Move> moves = state.getMoves();
+        for (Move m : moves) {
+            state.doMove(m);
+            
+            DraughtsNode newNode = new DraughtsNode(state);
+            //alpha = Math.max(alpha, alphaBeta(newNode, alpha, beta, depth - 1));
+            value = alphaBeta(newNode, alpha, beta, depth - 1);
+            if (alpha < value) {
+                alpha = value;
+                bestMove = m;
+            }
+            if (alpha >= beta) {
+                state.undoMove(m);
+                return beta;
+            }
+            alpha = Math.max(alpha, value);
+            
+            state.undoMove(m);
+        }
+        
         node.setBestMove(bestMove);
-        return value;
+        return alpha;
     }
 
     /** A method that evaluates the given state. */
     // ToDo: write an appropriate evaluation function
     int evaluate(DraughtsState state) {
-        // Variables for storing number of white pieces and kings
-        int whitePieces = 0;
-        int whiteKings = 0;
-        // Variable for storing black pieces and kings
-        int blackPieces = 0;
-        int blackKings = 0;
+        // Variables for storing the cost of the evaluation function
+        int evaluate = 0;
         // Obtain pieces array
         int[] pieces = state.getPieces();
+        
+        // Compute correct sign depending on player's color
+        int sign = state.isWhiteToMove() ? -1 : 1;
+        
         // Compute a value for this state by
         // comparing p[i] with WHITEPIECE (1), WHITEKING (3)
         // or BLACKPIECE (2), BLACKKING (4)
-        for (int p : pieces) {
-            switch (p) {
-                case 1:
-                    whitePieces += 1;
+        for (int i = 1; i <= 50; i ++) {
+            switch (pieces[i]) {
+                case DraughtsState.WHITEPIECE:
+                    evaluate += POSITION_MATRIX[i] * sign;
                     break;
-                case 2:
-                    blackPieces += 1;
+                case DraughtsState.BLACKPIECE:
+                    evaluate -= POSITION_MATRIX[51 - i] * sign;
                     break;
-                case 3:
-                    whiteKings += 1;
+                case DraughtsState.WHITEKING:
+                    evaluate += kingValue * sign;
                     break;
-                case 4:
-                    blackKings += 1;
+                case DraughtsState.BLACKKING:
+                    evaluate -= kingValue * sign;
                     break;
             }
         }
         
         // Return evaluation for white or black (depending on who needs to move)
-        if (state.isWhiteToMove()) {
-            return whitePieces + whiteKings;
-        } else {
-            return blackPieces + blackKings;
-        }
+        return evaluate;
     }
 }
