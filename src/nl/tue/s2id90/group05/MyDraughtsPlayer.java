@@ -135,5 +135,40 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
 
     /** A method that evaluates the given state. */
     // ToDo: write an appropriate evaluation function
-    int evaluate(DraughtsState state) { return 0; }
+    int evaluate(DraughtsState state) {
+        // Variables for storing number of white pieces and kings
+        int whitePieces = 0;
+        int whiteKings = 0;
+        // Variable for storing black pieces and kings
+        int blackPieces = 0;
+        int blackKings = 0;
+        // Obtain pieces array
+        int[] pieces = state.getPieces();
+        // Compute a value for this state by
+        // comparing p[i] with WHITEPIECE (1), WHITEKING (3)
+        // or BLACKPIECE (2), BLACKKING (4)
+        for (int p : pieces) {
+            switch (p) {
+                case 1:
+                    whitePieces += 1;
+                    break;
+                case 2:
+                    blackPieces += 1;
+                    break;
+                case 3:
+                    whiteKings += 1;
+                    break;
+                case 4:
+                    blackKings += 1;
+                    break;
+            }
+        }
+        
+        // Return evaluation for white or black (depending on who needs to move)
+        if (state.isWhiteToMove()) {
+            return whitePieces + whiteKings;
+        } else {
+            return blackPieces + blackKings;
+        }
+    }
 }
