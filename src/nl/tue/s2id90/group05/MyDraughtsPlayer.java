@@ -59,7 +59,7 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
             );
         } catch (AIStoppedException ex) {  /* nothing to do */  }
         
-        if (bestMove==null) {
+        if (bestMove == null) {
             System.err.println("no valid move found!");
             return getRandomValidMove(s);
         } else {
@@ -132,7 +132,7 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
         // ToDo: write an alphabeta search to compute bestMove and value
         
         // Checking whether depth limit is reached
-        if (depth <= 0) {
+        if (depth <= 0 || depth - numOpponentPieces(state) <= 0) {
             return evaluate(state);
         }
         
@@ -231,5 +231,29 @@ public class MyDraughtsPlayer  extends DraughtsPlayer{
         
         // Return evaluation for white or black (depending on who needs to move)
         return evaluate;
+    }
+    
+    int numOpponentPieces(DraughtsState state) {
+        // Variables for storing white/black pieces
+        int whitePieces = 0;
+        int blackPieces = 0;
+        // Obtain pieces array
+        int[] pieces = state.getPieces();
+        
+        for (int p : pieces) {
+            if (p == DraughtsState.WHITEPIECE || p == DraughtsState.WHITEKING) {
+                whitePieces += 1;
+            }
+            if (p == DraughtsState.BLACKPIECE || p == DraughtsState.BLACKKING) {
+                blackPieces += 1;
+            }
+        }
+        
+        // Return number of pieces of OPPONENT
+        if (state.isWhiteToMove()) {
+            return blackPieces;
+        } else {
+            return whitePieces;
+        }
     }
 }
