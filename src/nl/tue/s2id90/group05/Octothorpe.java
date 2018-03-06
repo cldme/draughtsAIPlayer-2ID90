@@ -28,20 +28,21 @@ public class Octothorpe  extends DraughtsPlayer{
     
     private int startDepth;
     
-    private int kingValue = 10;
-    private int singleCaptureValue = 1;
-    private int doubleCaptureValue = 5;
-    private int loseValue = -10;
-    private int[] POSITION_MATRIX = {0, 
-        9, 9, 9, 9, 9, 
-        9, 8, 8, 8, 8, 
-        7, 7, 7, 7, 8, 
-        7, 6, 6, 6, 6, 
-        5, 5, 5, 5, 6, 
-        5, 4, 4, 4, 4, 
-        3, 3, 3, 3, 4, 
-        3, 2, 2, 2, 2, 
-        1, 1, 1, 1, 2, 
+    private int kingValue = 50;
+    private int singleCaptureValue = 10;
+    private int doubleCaptureValue = 30;
+    private int loseValue = 100;
+    private int formationValue = 80;
+    private final int[] POSITION_MATRIX = {0,
+        30, 9, 9, 9, 30,
+        30, 8, 8, 8, 30,
+        30, 7, 7, 7, 30,
+        20, 6, 6, 6, 20,
+        20, 5, 5, 5, 20,
+        20, 5, 5, 5, 20,
+        10, 3, 3, 3, 10,
+        10, 2, 2, 2, 10,
+        10, 1, 1, 1, 10,
         3, 3, 3, 3, 3};
 
     public Octothorpe(int maxSearchDepth) {
@@ -328,14 +329,36 @@ public class Octothorpe  extends DraughtsPlayer{
             // piece[i+5]: bottom-right
             if (pieces[i] == playerPiece || pieces[i] == playerKing) {
                 // player is white/black and we check for attacking pieces
-                int[] emptyPosition = {5, 4, -6, -5};
-                int[] enemyPosition = {-6, -5, 5, 4};
-                evaluate -= getSingleCaptures(i, pieces, sign, emptyPosition, enemyPosition, enemyPiece, enemyKing);
+                int pieceRow = getPieceRow(i);
+                
+                int[] emptyPosition1 = {4, 5, -5, -6};
+                int[] enemyPosition1 = {-5, -6, 4, 5};
+                
+                int[] emptyPosition2 = {5, 6, -4, -5};
+                int[] enemyPosition2 = {-4, -5, 5, 6};
+                
+                int[] enemyDPosition01 = {-6, -4, 4, 6};
+                int[] emptyDPosition01 = {5, 5, -5, -5};
+                int[] myDPosition02 = {1, 1, 1, 1};
+                int[] emptyDPosition02 = {-4, -6, 6, 4};
+                
+                int[] enemyDPosition03 = {-5, -3, 5, 7};
+                int[] emptyDPosition03 = {6, 6, -4, -4};
+                int[] myDPosition04 = {1, 1, 1, 1};
+                int[] emptyDPosition04 = {-3, -5, 7, 5};
+                
+                if(pieceRow % 2 == 0) {
+                    evaluate -= getSingleCaptures(i, pieces, sign, emptyPosition1, enemyPosition1, enemyPiece, enemyKing) * loseValue * sign;
+                    // evaluate -= getDoubleLoss(i, pieces, enemyDPosition01, emptyDPosition01, emptyDPosition02, myDPosition02, playerPiece, playerKing, enemyPiece, enemyKing) * sign;
+                } else {
+                    evaluate -= getSingleCaptures(i, pieces, sign, emptyPosition2, enemyPosition2, enemyPiece, enemyKing) * loseValue * sign;
+                    // evaluate -= getDoubleLoss(i, pieces, enemyDPosition03, emptyDPosition03, emptyDPosition04, myDPosition04, playerPiece, playerKing, enemyPiece, enemyKing) * sign;
+                }
                 
                 // player is white/black and we check for pieces that can be captured
                 int[] newEmptyPosition = {-11, -9, 11, 9};
                 int[] newEnemyPosition = {-5, -4, 6, 5};
-                evaluate += getSingleCaptures(i, pieces, sign, newEmptyPosition, newEnemyPosition, enemyPiece, enemyKing);
+                evaluate += getSingleCaptures(i, pieces, sign, newEmptyPosition, newEnemyPosition, enemyPiece, enemyKing) * sign;
                 
                 // player is white/black and we check for pieces that can be captured
                 // double capture move (weights more) x-pattern
@@ -343,6 +366,7 @@ public class Octothorpe  extends DraughtsPlayer{
                 int[] enemyPosition01 = {5, 6, -4, -5};
                 int[] emptyPosition02 = {-2, 2, -3, -2};
                 int[] enemyPosition02 = {4, 7, -3, -6};
+                evaluate += getDoubleCaptures(i, pieces, sign, emptyPosition01, enemyPosition01, emptyPosition02, enemyPosition02, enemyPiece, enemyKing) * sign;
                 
                 // player is white/black and we check for pieces that can be captured
                 // double capture move (weights more) /-pattern
@@ -350,9 +374,40 @@ public class Octothorpe  extends DraughtsPlayer{
                 int[] enemyPosition03 = {-4, -5, 6, 5};
                 int[] emptyPosition04 = {-18, -22, 22, 18};
                 int[] enemyPosition04 = {-13, -16, 17, 14};
+                evaluate += getDoubleCaptures(i, pieces, sign, emptyPosition03, enemyPosition03, emptyPosition04, enemyPosition04, enemyPiece, enemyKing) * sign;
+                
+                evaluate += getFormations(i, pieces, playerPiece, playerKing) * sign;
             }
         }
         
+        return evaluate;
+    }
+    
+    public int getFormations(int i, int[] pieces, int playerPiece, int playerKing) {
+        int evaluate = 0;
+        if (getPieceRow(i) % 2 == 0) {
+            if (validPosition(i, -5)) {
+                if (pieces[i - 5] == playerPiece || pieces[i - 5] == playerKing) {
+                    evaluate += formationValue;
+                }
+            }
+            if (validPosition(i, -6)) {
+                if (pieces[i - 6] == playerPiece || pieces[i - 6] == playerKing) {
+                    evaluate += formationValue;
+                }
+            }
+        } else {
+            if (validPosition(i, -4)) {
+                if (pieces[i - 4] == playerPiece || pieces[i - 4] == playerKing) {
+                    evaluate += formationValue;
+                }
+            }
+            if (validPosition(i, -5)) {
+                if (pieces[i - 5] == playerPiece || pieces[i - 5] == playerKing) {
+                    evaluate += formationValue;
+                }
+            }
+        }
         return evaluate;
     }
     
@@ -364,7 +419,7 @@ public class Octothorpe  extends DraughtsPlayer{
             if (validPosition(i, emptyPosition[j]) && validPosition(i, enemyPosition[j])) {
                 if (pieces[i + emptyPosition[j]] == DraughtsState.EMPTY) {
                     if (pieces[i + enemyPosition[j]] == enemyPiece || pieces[i + enemyPosition[j]] == enemyKing) {
-                        evaluate += singleCaptureValue * sign;
+                        evaluate += singleCaptureValue;
                     }
                 }
             }
@@ -381,12 +436,36 @@ public class Octothorpe  extends DraughtsPlayer{
                 if (pieces[i + emptyPosition1[j]] == DraughtsState.EMPTY && pieces[i + emptyPosition2[j]] == DraughtsState.EMPTY) {
                     if ((pieces[i + enemyPosition1[j]] == enemyPiece || pieces[i + enemyPosition1[j]] == enemyKing) && 
                         (pieces[i + enemyPosition2[j]] == enemyPiece || pieces[i + enemyPosition2[j]] == enemyKing)) {
-                        evaluate += doubleCaptureValue * sign;
+                        evaluate += doubleCaptureValue;
                     }
                 }
             }
         }
         return evaluate;
+    }
+    
+    public int getDoubleLoss(int i, int[] pieces, int[] emptyPosition1, int[] enemyPosition1, int[] emptyPosition2, int[] myPosition2, int playerPiece, int playerKing, int enemyPiece, int enemyKing) {
+        int evaluate = 0;
+        for (int j = 0; j < 4; j ++) {
+            if (validPosition(i, emptyPosition1[j]) && validPosition(i, enemyPosition1[j]) &&
+                validPosition(i, emptyPosition2[j]) && validPosition(i, myPosition2[j])) {
+                if (pieces[i + emptyPosition1[j]] == DraughtsState.EMPTY && pieces[i + emptyPosition2[j]] == DraughtsState.EMPTY) {
+                    if (pieces[i + enemyPosition1[j]] == enemyPiece || pieces[i + enemyPosition1[j]] == enemyKing &&
+                        pieces[i + myPosition2[j]] == playerPiece || pieces[i+ myPosition2[j]] == playerKing) {
+                        evaluate += 2 * loseValue;
+                    }
+                }
+            }
+        }
+        return evaluate;
+    }
+    
+    public int getPieceRow(int i) {
+        int pieceRow = 0;
+        while (pieceRow < i) {
+            pieceRow += 5;
+        }
+        return pieceRow;
     }
     
     // Function for checking if a position is a valid 10x10 draughts position
