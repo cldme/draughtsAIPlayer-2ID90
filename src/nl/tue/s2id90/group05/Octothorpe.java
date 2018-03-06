@@ -28,22 +28,21 @@ public class Octothorpe  extends DraughtsPlayer{
     
     private int startDepth;
     
-    private int kingValue = 50;
-    private int singleCaptureValue = 10;
-    private int doubleCaptureValue = 30;
-    private int loseValue = 100;
-    private int formationValue = 80;
+    private int kingValue = 100;
+    private int loseValue = 50;
+    private int formationValue = 20;
+    private int riskyValue = 50;
     private final int[] POSITION_MATRIX = {0,
-        30, 9, 9, 9, 30,
-        30, 8, 8, 8, 30,
-        30, 7, 7, 7, 30,
-        20, 6, 6, 6, 20,
-        20, 5, 5, 5, 20,
-        20, 5, 5, 5, 20,
-        10, 3, 3, 3, 10,
-        10, 2, 2, 2, 10,
-        10, 1, 1, 1, 10,
-        3, 3, 3, 3, 3};
+        60, 50, 50, 60, 60,
+        60, 50, 40, 50, 60,
+        50, 40, 40, 50, 60,
+        50, 40, 30, 40, 50,
+        40, 30, 30, 40, 50,
+        40, 30, 20, 30, 40,
+        30, 20, 20, 30, 40,
+        30, 20, 20, 20, 30,
+        20, 10, 10, 20, 30,
+        20, 10, 10, 10, 20};
 
     public Octothorpe(int maxSearchDepth) {
         super("octothorpe.png"); // ToDo: replace with your own icon
@@ -271,30 +270,6 @@ public class Octothorpe  extends DraughtsPlayer{
         return evaluate;
     }
     
-    public int getNumOpponentPieces(DraughtsState state) {
-        // Variables for storing white/black pieces
-        int whitePieces = 0;
-        int blackPieces = 0;
-        // Obtain pieces array
-        int[] pieces = state.getPieces();
-        
-        for (int p : pieces) {
-            if (p == DraughtsState.WHITEPIECE || p == DraughtsState.WHITEKING) {
-                whitePieces += 1;
-            }
-            if (p == DraughtsState.BLACKPIECE || p == DraughtsState.BLACKKING) {
-                blackPieces += 1;
-            }
-        }
-        
-        // Return number of pieces of OPPONENT
-        if (this.isAIWhitePlayer) {
-            return blackPieces;
-        } else {
-            return whitePieces;
-        }
-    }
-    
     // Function that returns number of captured draughts minus
     // number of lost draughts for the player that needs to move
     public int getNumCaptures(DraughtsState state) {
@@ -322,11 +297,6 @@ public class Octothorpe  extends DraughtsPlayer{
         }
         
         for (int i = 1; i <= 50; i++) {
-            // Assume player piece is at position piece[i]. Now we check:
-            // piece[i-6]: top-left
-            // piece[i-5]: top-right
-            // piece[i+4]: bottom-left
-            // piece[i+5]: bottom-right
             if (pieces[i] == playerPiece || pieces[i] == playerKing) {
                 // player is white/black and we check for attacking pieces
                 int pieceRow = getPieceRow(i);
@@ -337,89 +307,40 @@ public class Octothorpe  extends DraughtsPlayer{
                 int[] emptyPosition2 = {5, 6, -4, -5};
                 int[] enemyPosition2 = {-4, -5, 5, 6};
                 
-                int[] enemyDPosition01 = {-6, -4, 4, 6};
-                int[] emptyDPosition01 = {5, 5, -5, -5};
-                int[] myDPosition02 = {1, 1, 1, 1};
-                int[] emptyDPosition02 = {-4, -6, 6, 4};
-                
-                int[] enemyDPosition03 = {-5, -3, 5, 7};
-                int[] emptyDPosition03 = {6, 6, -4, -4};
-                int[] myDPosition04 = {1, 1, 1, 1};
-                int[] emptyDPosition04 = {-3, -5, 7, 5};
-                
                 if(pieceRow % 2 == 0) {
-                    evaluate -= getSingleCaptures(i, pieces, sign, emptyPosition1, enemyPosition1, enemyPiece, enemyKing) * loseValue * sign;
-                    // evaluate -= getDoubleLoss(i, pieces, enemyDPosition01, emptyDPosition01, emptyDPosition02, myDPosition02, playerPiece, playerKing, enemyPiece, enemyKing) * sign;
+                    if (this.isAIWhitePlayer) {
+                        evaluate -= getSingleCaptures(i, pieces, emptyPosition1, enemyPosition1, enemyPiece, enemyKing) * loseValue * sign;
+                    } else {
+                        evaluate += getSingleCaptures(i, pieces, emptyPosition1, enemyPosition1, enemyPiece, enemyKing) * loseValue * sign;
+                    }
                 } else {
-                    evaluate -= getSingleCaptures(i, pieces, sign, emptyPosition2, enemyPosition2, enemyPiece, enemyKing) * loseValue * sign;
-                    // evaluate -= getDoubleLoss(i, pieces, enemyDPosition03, emptyDPosition03, emptyDPosition04, myDPosition04, playerPiece, playerKing, enemyPiece, enemyKing) * sign;
+                    if (this.isAIWhitePlayer) {
+                        evaluate -= getSingleCaptures(i, pieces, emptyPosition2, enemyPosition2, enemyPiece, enemyKing) * loseValue * sign;
+                    } else {
+                        evaluate += getSingleCaptures(i, pieces, emptyPosition2, enemyPosition2, enemyPiece, enemyKing) * loseValue * sign;
+                    }
                 }
                 
-                // player is white/black and we check for pieces that can be captured
-                int[] newEmptyPosition = {-11, -9, 11, 9};
-                int[] newEnemyPosition = {-5, -4, 6, 5};
-                evaluate += getSingleCaptures(i, pieces, sign, newEmptyPosition, newEnemyPosition, enemyPiece, enemyKing) * sign;
-                
-                // player is white/black and we check for pieces that can be captured
-                // double capture move (weights more) x-pattern
-                int[] emptyPosition01 = {9, 11, -9, -11};
-                int[] enemyPosition01 = {5, 6, -4, -5};
-                int[] emptyPosition02 = {-2, 2, -3, -2};
-                int[] enemyPosition02 = {4, 7, -3, -6};
-                evaluate += getDoubleCaptures(i, pieces, sign, emptyPosition01, enemyPosition01, emptyPosition02, enemyPosition02, enemyPiece, enemyKing) * sign;
-                
-                // player is white/black and we check for pieces that can be captured
-                // double capture move (weights more) /-pattern
-                int[] emptyPosition03 = {-9, -11, 11, 9};
-                int[] enemyPosition03 = {-4, -5, 6, 5};
-                int[] emptyPosition04 = {-18, -22, 22, 18};
-                int[] enemyPosition04 = {-13, -16, 17, 14};
-                evaluate += getDoubleCaptures(i, pieces, sign, emptyPosition03, enemyPosition03, emptyPosition04, enemyPosition04, enemyPiece, enemyKing) * sign;
-                
-                evaluate += getFormations(i, pieces, playerPiece, playerKing) * sign;
+                if (this.isAIWhitePlayer) {
+                    evaluate += getNumFormations(i, pieces, sign, playerPiece, playerKing, enemyPiece, enemyKing);
+                } else {
+                    evaluate -= getNumFormations(i, pieces, sign, playerPiece, playerKing, enemyPiece, enemyKing);
+                }
             }
         }
         
         return evaluate;
     }
     
-    public int getFormations(int i, int[] pieces, int playerPiece, int playerKing) {
-        int evaluate = 0;
-        if (getPieceRow(i) % 2 == 0) {
-            if (validPosition(i, -5)) {
-                if (pieces[i - 5] == playerPiece || pieces[i - 5] == playerKing) {
-                    evaluate += formationValue;
-                }
-            }
-            if (validPosition(i, -6)) {
-                if (pieces[i - 6] == playerPiece || pieces[i - 6] == playerKing) {
-                    evaluate += formationValue;
-                }
-            }
-        } else {
-            if (validPosition(i, -4)) {
-                if (pieces[i - 4] == playerPiece || pieces[i - 4] == playerKing) {
-                    evaluate += formationValue;
-                }
-            }
-            if (validPosition(i, -5)) {
-                if (pieces[i - 5] == playerPiece || pieces[i - 5] == playerKing) {
-                    evaluate += formationValue;
-                }
-            }
-        }
-        return evaluate;
-    }
-    
     // Function for calculating captures based on input arrays
-    public int getSingleCaptures(int i, int[] pieces, int sign, int[] emptyPosition, int[] enemyPosition, int enemyPiece, int enemyKing) {
+    public int getSingleCaptures(int i, int[] pieces, int[] emptyPosition, int[] enemyPosition, int enemyPiece, int enemyKing) {
         // Variables for storing the cost of the evaluation function
         int evaluate = 0;
         for (int j = 0; j < 4; j ++) {
             if (validPosition(i, emptyPosition[j]) && validPosition(i, enemyPosition[j])) {
                 if (pieces[i + emptyPosition[j]] == DraughtsState.EMPTY) {
                     if (pieces[i + enemyPosition[j]] == enemyPiece || pieces[i + enemyPosition[j]] == enemyKing) {
-                        evaluate += singleCaptureValue;
+                        evaluate += 1;
                     }
                 }
             }
@@ -427,45 +348,81 @@ public class Octothorpe  extends DraughtsPlayer{
         return evaluate;
     }
     
-    public int getDoubleCaptures(int i, int[] pieces, int sign, int[] emptyPosition1, int[] enemyPosition1, int[] emptyPosition2, int[] enemyPosition2, int enemyPiece, int enemyKing) {
-        // Variables for storing the cost of the evaluation function
+    public int getNumFormations(int i, int[] pieces, int sign, int playerPiece, int playerKing, int enemyPiece, int enemyKing) {
         int evaluate = 0;
-        for (int j = 0; j < 4; j ++) {
-            if (validPosition(i, emptyPosition1[j]) && validPosition(i, enemyPosition1[j]) &&
-                validPosition(i, emptyPosition2[j]) && validPosition(i, enemyPosition2[j])) {
-                if (pieces[i + emptyPosition1[j]] == DraughtsState.EMPTY && pieces[i + emptyPosition2[j]] == DraughtsState.EMPTY) {
-                    if ((pieces[i + enemyPosition1[j]] == enemyPiece || pieces[i + enemyPosition1[j]] == enemyKing) && 
-                        (pieces[i + enemyPosition2[j]] == enemyPiece || pieces[i + enemyPosition2[j]] == enemyKing)) {
-                        evaluate += doubleCaptureValue;
-                    }
+        if (getPieceRow(i) % 2 == 0) {
+            if (validPosition(i, -5)) {
+                if (pieces[i - 5] == playerPiece || pieces[i - 5] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+                if (pieces[i - 5] == enemyPiece || pieces[i - 5] == enemyKing) {
+                    evaluate -= riskyValue * sign;
+                }
+            }
+            if (validPosition(i, -6)) {
+                if (pieces[i - 6] == playerPiece || pieces[i - 6] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+                if (pieces[i - 6] == enemyPiece || pieces[i - 6] == enemyKing) {
+                    evaluate -= riskyValue * sign;
+                }
+            }
+            if (validPosition(i, 4)) {
+                if (pieces[i + 4] == playerPiece || pieces[i + 4] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+                if (pieces[i + 4] == enemyPiece || pieces[i + 4] == enemyKing) {
+                    evaluate -= riskyValue * sign;
+                }
+            }
+            if (validPosition(i, 5)) {
+                if (pieces[i + 5] == playerPiece || pieces[i + 5] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+                if (pieces[i + 5] == enemyPiece || pieces[i + 5] == enemyKing) {
+                    evaluate -= riskyValue * sign;
+                }
+            }
+        } else {
+            if (validPosition(i, -4)) {
+                if (pieces[i - 4] == playerPiece || pieces[i - 4] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+            }
+            if (validPosition(i, -5)) {
+                if (pieces[i - 5] == playerPiece || pieces[i - 5] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+            }
+            if (validPosition(i, 5)) {
+                if (pieces[i + 5] == playerPiece || pieces[i + 5] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+                if (pieces[i + 5] == enemyPiece || pieces[i + 5] == enemyKing) {
+                    evaluate -= riskyValue * sign;
+                }
+            }
+            if (validPosition(i, 6)) {
+                if (pieces[i + 6] == playerPiece || pieces[i + 6] == playerKing) {
+                    evaluate += formationValue * sign;
+                }
+                if (pieces[i + 6] == enemyPiece || pieces[i + 6] == enemyKing) {
+                    evaluate -= riskyValue * sign;
                 }
             }
         }
+
         return evaluate;
     }
-    
-    public int getDoubleLoss(int i, int[] pieces, int[] emptyPosition1, int[] enemyPosition1, int[] emptyPosition2, int[] myPosition2, int playerPiece, int playerKing, int enemyPiece, int enemyKing) {
-        int evaluate = 0;
-        for (int j = 0; j < 4; j ++) {
-            if (validPosition(i, emptyPosition1[j]) && validPosition(i, enemyPosition1[j]) &&
-                validPosition(i, emptyPosition2[j]) && validPosition(i, myPosition2[j])) {
-                if (pieces[i + emptyPosition1[j]] == DraughtsState.EMPTY && pieces[i + emptyPosition2[j]] == DraughtsState.EMPTY) {
-                    if (pieces[i + enemyPosition1[j]] == enemyPiece || pieces[i + enemyPosition1[j]] == enemyKing &&
-                        pieces[i + myPosition2[j]] == playerPiece || pieces[i+ myPosition2[j]] == playerKing) {
-                        evaluate += 2 * loseValue;
-                    }
-                }
-            }
-        }
-        return evaluate;
-    }
-    
+        
+    // Function returns the row on which the piece is placed
+    // i.e: by checking division modulo 5
     public int getPieceRow(int i) {
-        int pieceRow = 0;
-        while (pieceRow < i) {
-            pieceRow += 5;
-        }
-        return pieceRow;
+       int pieceRow = 0;
+       while (pieceRow < i) {
+           pieceRow += 5;
+       }
+       return pieceRow;
     }
     
     // Function for checking if a position is a valid 10x10 draughts position
